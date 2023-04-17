@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ Ref: https://ui.glass/generator/
+*/
+
+body {
+  background-color: #909aad;
+  background-image: radial-gradient(
+      at 47% 33%,
+      hsl(162.42, 45%, 48%) 0,
+      transparent 59%
+    ),
+    radial-gradient(at 82% 65%, hsl(218.92, 32%, 43%) 0, transparent 55%);
+  height: 100vh;
+  width: 100vw;
+  padding: 2rem;
+}
