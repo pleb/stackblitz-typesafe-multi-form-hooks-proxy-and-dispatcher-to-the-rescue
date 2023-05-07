@@ -23,6 +23,9 @@ import { IconButton } from '~/components/molecules/IconButton'
 import Delete from '../../icon/Delete'
 import Edit from '../../icon/Edit'
 import { Button } from '~/components/atoms/Button'
+import { dispatch } from '~/utilities/dispatcher'
+import { useDispatchActions } from '~/hooks/useDispatchActions'
+import { useValidatorFields } from '~/hooks/useValidatorFields'
 
 const validator = withZod(
   z.discriminatedUnion('_action', [
@@ -53,37 +56,24 @@ export const action = async (data: DataFunctionArgs) => {
   // Simulate network latency
   await randomDelayBetween(250, 1000)
 
-  const formData = await data.request.formData()
-  const result = await validator.validate(formData)
-
-  if (result.error) return validationError(result.error)
-
-  switch (result.data._action) {
-    case 'reset': {
-      await db.populateSample()
-      break
-    }
-    case 'delete': {
-      db.patch(Number(result.data.id), { deleted: true })
-      break
-    }
-    case 'complete': {
-      db.patch(Number(result.data.id), { completed: true })
-      break
-    }
-    case 'upsert': {
-      const isEdit = !isNaN(Number(result.data.id))
-      if (isEdit) {
-        db.patch(Number(result.data.id), {
-          description: result.data.description,
-        })
+  return await dispatch(data, validator, {
+    reset: async _ => {
+      db.populateSample()
+    },
+    delete: async action => {
+      db.patch(action.id, { deleted: true })
+    },
+    complete: async action => {
+      db.patch(action.id, { completed: true })
+    },
+    upsert: async action => {
+      if (action.id) {
+        db.patch(action.id, { description: action.description })
       } else {
-        db.append({ description: result.data.description })
+        db.append({ description: action.description })
       }
-      break
-    }
-  }
-  return null
+    },
+  })
 }
 
 type Todo = Awaited<ReturnType<typeof loader>>[number]
@@ -93,6 +83,8 @@ export default function Index() {
   const [edit, setEdit] = useState<Todo>()
   const clearEdit = useCallback(() => setEdit(undefined), [setEdit])
   const loadingContext = useLoadingContext()
+  const dispatchActions = useDispatchActions(validator)
+  const fields = useValidatorFields(validator)
 
   return (
     <div
@@ -103,8 +95,8 @@ export default function Index() {
       <ValidatedForm validator={validator} method='post' className='grid mb-2'>
         <GlassButton
           type='submit'
-          name={'_action'}
-          value={'reset'}
+          name={fields._action}
+          value={dispatchActions.reset}
           className='place-self-end py-1 px-4'
           onClick={clearEdit}
           disabled={loadingContext.isLoading}
@@ -121,7 +113,7 @@ export default function Index() {
         <Panel className='mt-2 px-4' aria-live='polite'>
           {todos.map((td, i) => (
             <ValidatedForm key={td.id} validator={validator} method='post'>
-              <ValidatedHiddenInput name='id' value={td.id.toString()} />
+              <ValidatedHiddenInput name={fields.id} value={td.id.toString()} />
               <Panel
                 border='b'
                 className={cn('p-3', 'hover:bg-glass/20', 'grid grid-flow-col')}
@@ -138,8 +130,8 @@ export default function Index() {
                       id={`delete-${td.id}`}
                       color='Red'
                       type='submit'
-                      name='_action'
-                      value='delete'
+                      name={fields._action}
+                      value={dispatchActions.delete}
                       disabled={loadingContext.isLoading}
                       aria-label='Delete to-do entry'
                     >
@@ -155,9 +147,9 @@ export default function Index() {
                     </IconButton>
                     <ValidatedCheckboxInput
                       className='ml-2'
-                      name='_action'
+                      name={fields._action}
                       label='Complete to-do entry'
-                      value='complete'
+                      value={dispatchActions.complete}
                       submitOnChange={true}
                       disabled={loadingContext.isLoading}
                     />
@@ -176,21 +168,21 @@ export default function Index() {
           resetAfterSubmit={true}
           method='post'
         >
-          <ValidatedHiddenInput name='id' value={edit?.id.toString()} />
+          <ValidatedHiddenInput name={fields.id} value={edit?.id.toString()} />
           <div className='mt-2 py-3 px-4 grid grid-flow-col auto-cols-[1fr_200px] gap-2 items-start'>
             <ValidatedTextInput
               className='p-2 border'
               label='To-do description'
               placeholder='Todo description'
-              name='description'
+              name={fields.description}
               value={edit?.description}
               disabled={loadingContext.isLoading}
             />
             <Button
               className='text-black'
               type='submit'
-              name='_action'
-              value='upsert'
+              name={fields._action}
+              value={dispatchActions.upsert}
               disabled={loadingContext.isLoading}
             >
               {edit ? 'Edit' : 'Add'}
