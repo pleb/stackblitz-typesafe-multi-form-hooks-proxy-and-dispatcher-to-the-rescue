@@ -1,4 +1,4 @@
-import type { DataFunctionArgs } from '@remix-run/node'
+import type { ActionFunctionArgs } from '@remix-run/node'
 import type { SuccessResult, Validator } from 'remix-validated-form'
 import { validationError } from 'remix-validated-form'
 import {
@@ -25,7 +25,7 @@ export type DispatchActionsLookup<T extends ZodActionType> = {
 }
 
 /**
- * Is a small action dispatcher which can be use for multi-forms (single button forms) in a remix app.
+ * Is a small action dispatcher which can be used for multi-forms (single button forms) in a remix app.
  *
  * @example <caption>Single action</caption>
  *
@@ -77,7 +77,7 @@ export type DispatchActionsLookup<T extends ZodActionType> = {
  * }
  */
 export async function dispatch<Validator extends ZodActionType>(
-  data: DataFunctionArgs,
+  data: ActionFunctionArgs,
   validator: Validator,
   actions: DispatchActions<ExtractZodUnion<Validator>>,
 ) {

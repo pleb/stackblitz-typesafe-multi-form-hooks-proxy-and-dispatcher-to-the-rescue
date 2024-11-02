@@ -1,10 +1,5 @@
-// global.cache is needed before of how remix local dev works
+// global.cache is needed because of how remix local dev works
 // see https://remix.run/docs/en/v1/other-api/serve
-declare module global {
-  let db: TodoItem[]
-  let idTracker: number
-  let hasLoaded: boolean
-}
 
 export type TodoItem = {
   id: number
@@ -13,24 +8,32 @@ export type TodoItem = {
   description: string
 }
 
+const getGlobal = () =>
+  global as typeof global & {
+    db: TodoItem[]
+    idTracker?: number
+    hasLoaded: boolean
+  }
+const state = getGlobal()
+
 const newId = () => {
-  global.idTracker = (global.idTracker ?? 0) + 1
-  return global.idTracker
+  state.idTracker = (state.idTracker ?? 0) + 1
+  return state.idTracker
 }
 
 export const db = {
-  load: () => global.db ?? [],
+  load: () => state.db ?? [],
   save: function (
     items: (Omit<TodoItem, 'id'> & Partial<Pick<TodoItem, 'id'>>)[],
   ) {
-    global.db = items.map(t => ({
+    state.db = items.map(t => ({
       ...t,
       id: t.id ?? newId(),
     }))
-    return global.db
+    return state.db
   },
   patch: function (id: number, patch: Partial<Omit<TodoItem, 'id'>>) {
-    global.db = global.db.map(t =>
+    state.db = state.db.map(t =>
       t.id !== id
         ? t
         : {
@@ -50,7 +53,7 @@ export const db = {
   },
 }
 
-if (!global.hasLoaded) {
+if (!state.hasLoaded) {
   db.populateSample()
-  global.hasLoaded = true
+  state.hasLoaded = true
 }

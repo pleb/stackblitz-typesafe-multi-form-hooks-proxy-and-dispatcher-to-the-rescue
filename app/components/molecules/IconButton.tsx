@@ -6,12 +6,11 @@ import {
 } from '~/components/molecules/GlassButton'
 
 type IconButtonProps = GlassButtonProps & {
-  backgroundClass?: string
   color: 'Red' | 'Green'
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ children, backgroundClass, color, className, ...props }, ref) => (
+  ({ children, color, className, ...props }, ref) => (
     <GlassButton
       ref={ref}
       className={cn('py-1', 'px-2', className)}

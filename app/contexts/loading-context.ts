@@ -7,5 +7,3 @@ export type LoadingContextObject = {
 export const LoadingContext = createContext<LoadingContextObject>({
   isLoading: false,
 })
-
-export const useLoadingContext = () => useContext(LoadingContext)
